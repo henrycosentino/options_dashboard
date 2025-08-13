@@ -1,8 +1,7 @@
-import yfinance as yf
 from helpers import *
 import streamlit as st
-from datetime import timedelta
 from datetime import datetime
+from datetime import timedelta
 
 if "ticker" not in st.session_state: st.session_state.ticker = "SPY"
 if "expiration_date" not in st.session_state: st.session_state.expiration_date = (datetime.today() + timedelta(days=90)).date()
@@ -60,27 +59,37 @@ ticker = st.sidebar.text_input("Ticker:", value=st.session_state.ticker).upper()
 st.session_state.ticker = ticker
 
 # yfinance Stock Request for Spot & Dividend Yield
-stock_info = None
 spot = None
 dividend_yield = 0.0
+if "spot" not in st.session_state: st.session_state.spot = 600.0
+if "dividend_yield" not in st.session_state: st.session_state.dividend_yield = 0.017
 if ticker:
-    try:
-        stock = yf.Ticker(ticker)
-        hist = stock.history(period="1d")
-        if not hist.empty:
-            spot = hist['Close'].iloc[-1]
-        else:
-            st.sidebar.error(f"Failed to retrieve price for {ticker} (check yfinance indexing)...")
+    spot, dividend_yield = get_yfinance(ticker)
 
-        stock_info = stock.info
-        dividend_yield_value = stock_info.get("dividendYield", None)
-        if dividend_yield_value is not None:
-            dividend_yield = dividend_yield_value / 100
-        else:
-            dividend_yield = 0.0
-
-    except:
+    if spot is not None:
+        st.sidebar.write(f"**Spot Price:** ${spot:.2f}")
+        st.session_state.spot = spot
+    else:
         st.sidebar.error(f"Failed to retrieve data for {ticker}...")
+        spot = st.session_state.spot
+    
+    if dividend_yield is not None:
+        st.session_state.dividend_yield = dividend_yield / 100
+    else:
+        st.sidebar.error(f"Failed to retrieve dividend yield for {ticker}...")
+        dividend_yield = st.session_state.dividend_yield
+
+# Spot Price
+if spot:
+    st.sidebar.write(f"**Spot Price:** ${spot:.2f}")
+else:
+    st.sidebar.warning("Spot price not available...")
+
+# Dividend Yield
+if dividend_yield is not None:
+    st.sidebar.write(f"**Dividend Yield:** {100*dividend_yield:.2f}%")
+else:
+    st.sidebar.warning("Dividend yield not available...")
 
 # Sub-Strategy Selection
 if "sub_strategy" not in st.session_state:
@@ -254,16 +263,6 @@ time = (expiration_date - datetime.today().date()).days / 365
 st.session_state.time = time
 st.sidebar.write(f"**Time to Expiry:** {time:.2f} years")
 
-# Spot Price
-if spot:
-    st.sidebar.write(f"**Spot Price:** ${spot:.2f}")
-else:
-    st.sidebar.warning("Spot price not available...")
-
-# Dividend Yield
-st.session_state.dividend_yield = dividend_yield
-st.sidebar.write(f"**Dividend Yield:** {100*st.session_state.dividend_yield:.2f}%")
-
 # Risk-Free Rate Request
 try:
     rate = interpolate_rates(get_rates_value_dict(st.secrets["FRED_API_KEY"]), time)
@@ -316,7 +315,6 @@ if dividend_yield is None or dividend_yield < 0: validation_errors.append("Divid
 
 if sub_strategy in ["Long Call Butterfly", "Short Call Butterfly",
                     "Long Put Butterfly", "Short Put Butterfly"]:
-    # option_type is correctly defined here
     option_type = "Call" if "Call" in sub_strategy else "Put"
     low_strike = current_strategy_inputs["low_strike"]
     low_px = current_strategy_inputs["low_px"]

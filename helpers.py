@@ -3,6 +3,8 @@ import matplotlib
 import numpy as np
 import pandas as pd
 import yfinance as yf
+import streamlit as st
+from functools import cache
 from scipy.stats import norm
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -657,6 +659,7 @@ class Volatility(Underlying):
         return (df['impliedVolatility'] * df['volume']).sum() / df['volume'].sum()
     
     # Internal helper method for spot_iv and spot_iv_surface - not intended for external use
+    @st.cache_data(ttl=360)
     def _threading_option_chain(self) -> list:
         cutoff_expiry_dates_ls = self.cutoff_expiration_days_dates()[0]
         with ThreadPoolExecutor(max_workers=min(len(cutoff_expiry_dates_ls), 10)) as executor:
@@ -776,6 +779,7 @@ class Volatility(Underlying):
     
 
 # --- Interest Rate Interpolation Function --- 
+@cache
 def get_rates_value_dict(fred_key) -> dict:
     rates_series_dict = {
         'one_month': 'DGS1MO',
@@ -876,6 +880,38 @@ def process_iron_butterfly(low, atm, atm_2, high, dir_low, dir_atm, dir_high) ->
         high_matrix = high_future.result()
     
     return [low_matrix, atm_matrix, atm_2_matrix, high_matrix]
+
+
+# --- yfinance Data Function ---
+@st.cache_data(ttl=300)
+def get_yfinance(ticker):
+    spot = None
+    dividend_yield = 0.0
+
+    stock = yf.Ticker(ticker)
+    try:
+        hist = stock.history(period="1d")
+        if not hist.empty:
+            spot = hist['Close'].iloc[-1]
+        else:
+            st.sidebar.error(f"Failed to retrieve price for {ticker}, check yfinance indexing...")
+            return None, None
+    except:
+        st.sidebar.error(f"Failed to retrieve price for {ticker}...")
+        return None, None
+    
+    try:
+        stock_info = stock.info
+        dividend_yield_value = stock_info.get("dividendYield", None)
+        if dividend_yield_value is not None:
+            dividend_yield = dividend_yield_value / 100
+        else:
+            dividend_yield = 0.0
+    except:
+        st.sidebar.error(f"Failed to retrieve dividend yield for {ticker}...")
+        dividend_yield = 0.0
+        
+    return spot, dividend_yield
 
 
 # --- HTML Formatting Functions ---

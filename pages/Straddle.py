@@ -1,9 +1,7 @@
-import yfinance as yf
 from helpers import *
 import streamlit as st
 from datetime import datetime
 from datetime import timedelta
-from concurrent.futures import ThreadPoolExecutor
 
 # --- Streamlit App Input & Layout --- 
 # Title
@@ -141,34 +139,21 @@ dividend_yield = None
 if "straddle_spot" not in st.session_state: st.session_state.straddle_spot = 600.0
 if "straddle_dividend_yield" not in st.session_state: st.session_state.straddle_dividend_yield = 0.017
 if ticker:
-    try:
-        stock = yf.Ticker(ticker)
-        hist = stock.history(period="1d")
-        if not hist.empty:
-            spot = hist['Close'].iloc[-1]
-        else:
-            st.sidebar.error(f"Failed to retrieve price for {ticker} (check yfinance indexing)...")
-            spot = st.session_state.straddle_spot
-
-        stock_info = stock.info
-        dividend_yield_value = stock_info.get("dividendYield", None)
-        if dividend_yield_value is not None:
-            dividend_yield = dividend_yield_value / 100
-        else:
-            dividend_yield = 0.0
-
-    except:
+    spot, dividend_yield = get_yfinance(ticker)
+    
+    if spot is not None:
+        st.sidebar.write(f"**Spot Price:** ${spot:.2f}")
+        st.session_state.straddle_spot = spot
+    else:
         st.sidebar.error(f"Failed to retrieve data for {ticker}...")
         spot = st.session_state.straddle_spot
+
+    if dividend_yield is not None:
+        st.sidebar.write(f"**Dividend Yield:** {dividend_yield:.2f}%")
+        st.session_state.straddle_dividend_yield = dividend_yield / 100
+    else:
+        st.sidebar.error(f"Failed to retrieve dividend yield for {ticker}...")
         dividend_yield = st.session_state.straddle_dividend_yield
-
-if spot:
-    st.sidebar.write(f"**Spot Price:** ${spot:.2f}")
-    st.session_state.straddle_spot = spot
-
-if dividend_yield is not None:
-    st.sidebar.write(f"**Dividend Yield:** {100*dividend_yield:.2f}%")
-    st.session_state.straddle_dividend_yield = dividend_yield
 
 # Risk-Free Rate Request
 if 'straddle_rate' not in st.session_state:
@@ -264,15 +249,8 @@ if all(v is not None for v in [spot, call_px, put_px, call_iv, put_iv, strike, r
                                          b=dividend_yield, option_type='Put', style=style, 
                                          spot_step=spot_step, iv_step=iv_step)
         
-            try:
-               with ThreadPoolExecutor(max_workers=2) as executor:
-                    call_future = executor.submit(call_matrix_instance.get_matrix, direction=direction)
-                    put_future = executor.submit(put_matrix_instance.get_matrix, direction=direction)
-                    call_matrix = call_future.result() * call_quantity
-                    put_matrix = put_future.result() * put_quantity
-            except:
-                call_matrix = call_matrix_instance.get_matrix(direction=direction) * call_quantity
-                put_matrix = put_matrix_instance.get_matrix(direction=direction) * put_quantity
+            call_matrix = call_matrix_instance.get_matrix(direction=direction) * call_quantity
+            put_matrix = put_matrix_instance.get_matrix(direction=direction) * put_quantity
 
             plot_instance = Plotting(matrix=[call_matrix, put_matrix], 
                                     instance=[call_matrix_instance, put_matrix_instance], 

@@ -1,4 +1,3 @@
-import yfinance as yf
 from helpers import *
 import streamlit as st
 from datetime import datetime
@@ -94,34 +93,21 @@ dividend_yield = None
 if "single_spot" not in st.session_state: st.session_state.single_spot = 600.0
 if "single_dividend_yield" not in st.session_state: st.session_state.single_dividend_yield = 0.017
 if ticker:
-    try:
-        stock = yf.Ticker(ticker)
-        hist = stock.history(period="1d")
-        if not hist.empty:
-            spot = hist['Close'].iloc[-1]
-        else:
-            st.sidebar.error(f"Failed to retrieve price for {ticker} (check yfinance indexing)...")
-            spot = st.session_state.single_spot
+    spot, dividend_yield = get_yfinance(ticker)
 
-        stock_info = stock.info
-        dividend_yield_value = stock_info.get("dividendYield", None)
-        if dividend_yield_value is not None:
-            dividend_yield = dividend_yield_value / 100
-        else:
-            dividend_yield = 0.0
-
-    except:
+    if spot is not None:
+        st.sidebar.write(f"**Spot Price:** ${spot:.2f}")
+        st.session_state.single_spot = spot
+    else:
         st.sidebar.error(f"Failed to retrieve data for {ticker}...")
         spot = st.session_state.single_spot
+        
+    if dividend_yield is not None:
+        st.sidebar.write(f"**Dividend Yield:** {dividend_yield:.2f}%")
+        st.session_state.single_dividend_yield = dividend_yield / 100
+    else:
+        st.sidebar.error(f"Failed to retrieve dividend yield for {ticker}...")
         dividend_yield = st.session_state.single_dividend_yield
-
-if spot:
-    st.sidebar.write(f"**Spot Price:** ${spot:.2f}")
-    st.session_state.single_spot = spot
-
-if dividend_yield:
-    st.sidebar.write(f"**Dividend Yield:** {100*dividend_yield:.2f}%")
-    st.session_state.single_dividend_yield = dividend_yield
 
 # Risk-Free Rate Request
 if 'single_rate' not in st.session_state:
