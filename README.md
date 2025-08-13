@@ -10,10 +10,10 @@
     - [Single](https://github.com/henrycosentino/options_dashboard/blob/main/Single.py): a single option strategy, either a long or short call or put option
     - [Straddle](https://github.com/henrycosentino/options_dashboard/blob/main/pages/Straddle.py): a straddle option strategy, where either a long or short straddle is used with the same expiration and strike price; quantity can be changed for both options
     - [Butterfly](https://github.com/henrycosentino/options_dashboard/blob/main/pages/Butterfly.py): various butterfly strategies can be analyzed
-      - Inputs into these pages primarily concern the necessary parameters for the BlackScholes class (model)
-      - Unique features include a calendar pop-up provided by Streamlit .date_input() to set the expiration date, the interpolation of the risk-free using the FRED API to stream current US Yield Curve data (I am aware of the API key, it is free from FRED), and implied volatility and the spot price are capable of being offset by their respective sliders
+      - Inputs into these pages primarily concern the necessary parameters for the BlackScholes and Binomial models
+      - Unique features include a calendar pop-up provided by Streamlit .date_input() to set the expiration date, the interpolation of the risk-free using the FRED API to stream current US Yield Curve data, and implied volatility and the spot price are capable of being offset by their respective sliders
     - Outputs
-      - The Greeks are output into an HTML-formatted box (I want to emphasize that I do not know how to write HTML and relied on ChatGPT for assistance on this part)
+      - The Greeks are output into an HTML-formatted box
       - The heatmap graph of the options PnL matrix is displayed on the right-hand side once all the parameters have been set
   - Volatility Analysis
     - [Term Structure](https://github.com/henrycosentino/options_dashboard/blob/main/pages/Volatility_Term_Structure.py): analyzes the term structure of spot and forward volatility
@@ -22,26 +22,26 @@
           - The "Forward Period" input gives the user the ability to change the forward volatility curve they wish to analyze (ie, if "Forward Period" is set to 15 days and one of the days in the expiration list is 30, then this graph will display the 15D 30D Forward IV for that specific day)
           - The "ATM Band" controls the type of volatility displayed, as at-the-money options typically represent the market's view of true volatility. Users can adjust the band to include options that are further out-of-the-money or closer to-the-money, depending on their preferred volatility term structure for analysis. If the Term Structure graphs do not show, consider changing this input
       - Output
-          - The output is two (one call and one put) matplotlib graphs of the spot and forward implied volatilities for a specific stock, leveraging vanilla stock option data from yfinance
+          - The output is two (one call and one put) graphs of the spot and forward implied volatilities for a specific stock
     - [Surface](https://github.com/henrycosentino/options_dashboard/blob/main/pages/Volatility_Surface.py): analyzes the current volatility surface of all traded options for the underlying
       - Inputs
           - The minimum and maximum expiration days, along with the minimum and maximum strike, allow the user to focus on a specific subset of the volatility surface
-          - The "Activate Meshgrid" switch should only be "on" when a small subset of the volatility surface has been selected
+          - The "Activate Meshgrid" switch should only be _on_ when a small subset of the volatility surface has been selected
       - Output
-          - The output is a plotly 3D graph of the current volatility surface, leveraging vanilla stock option data from yfinance
+          - The output is a graph of the current volatility surface
 ## [helpers](https://github.com/henrycosentino/options_dashboard/blob/main/helpers.py)
 - Black-Scholes & Binomial Classes
-  - The classes were created to automate the process of various option metric calculations and are used in the dashboard.py and plotting.py files
+  - The classes were created to automate the process of various option pricing and risk metric calculations
   - They calculate the value of a call and put option, along with first and second-order option Greeks
   - Black-Scholes and Binomial can be dynamically set via switches inside the dashboard
-      - When 'American' is selected, only the Binomial class is used
-      - When 'European' is selected, only the BlackScholes class is used
+      - When 'American' is selected, only the Binomial class is used for pricing and Greeks
+      - When 'European' is selected, only the BlackScholes class is used for pricing and Greeks
   - Black-Scholes relies on the methodology expressed in Option Volatility and Pricing: Advanced Trading Strategies and Techniques, 2nd Edition
   - Binomial relies on the methodology expressed by Cox-Ross-Rubinstein to price call and put options, while some of the Greeks are calculated by perturbing the option price output of the Cox-Ross-Rubinstein model
 - Matrix & Plotting Classes
-  - The classes were created for two purposes: to construct a matrix of option prices for different spot and implied volatility levels, and to plot the matrix cleanly
+  - The classes were created for two purposes: to construct a matrix of option prices for different spot and implied volatility levels, and to plot the matrix
   - Matrix Construction
-    - The class begins with matrix construction, referencing the BlackScholes class to calculate call and put prices for a given spot price and implied volatility
+    - The class begins with matrix construction, referencing the BlackScholes or Binomial to calculate call and put prices for a given spot price and implied volatility
     - The spot and implied volatility are dynamic as they can be offset by spot_step and iv_step, which can be manually tuned within the live dashboard (for example, if Spot Step Slider is set to 0.05, or 5%, then each spot price directly surrounding the base spot will be offset by 5% and so forth as you move farther from the base spot rate)
 - Underlying & Volatility Classes
   - The Underlying class is used to create a stock object used during the process of volatility analysis
