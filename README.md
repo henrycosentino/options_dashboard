@@ -1,5 +1,5 @@
 ## Streamlit App Link
-- https://optiondashboard-727xijizdnq8revxsgmxa7.streamlit.app/
+- https://optionsdashboard-teq7sph6mjnsahc3a96yrq.streamlit.app/
 - Use dark mode and wide mode, and the app is not designed for mobile use 
 - I manage the app frequently; however, the yfinance and FRED APIs may update their codebase, causing the app to fail...
 ## Project Overview
