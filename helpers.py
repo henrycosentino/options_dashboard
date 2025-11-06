@@ -919,10 +919,10 @@ def format_greeks_bs(delta, gamma, vega, volga, theta, rho, vanna, charm):
     return f"""
         <style>
         .greeks-container {{
-            border: 2px solid #FF6B6B;
+            border: 2px solid #FF4B4B;
             padding: 20px;
             border-radius: 14px;
-            background-color: rgba(255, 107, 107, 0.1);
+            background-color: rgba(255, 75, 75, 0.1);
             width: 85%;
             max-width: 300px;
             font-size: 16px;
@@ -932,8 +932,7 @@ def format_greeks_bs(delta, gamma, vega, volga, theta, rho, vanna, charm):
             color: white;
         }}
         .greeks-container span {{
-            color: #FF6B6B;
-            font-weight: bold;
+            color: #FF4B4B;
         }}
         </style>
         <div class="greeks-container">
@@ -952,10 +951,10 @@ def format_greeks_bn(delta, gamma, vega, theta, rho):
     return f"""
         <style>
         .greeks-container {{
-            border: 2px solid #FF6B6B;
+            border: 2px solid #FF4B4B;
             padding: 20px;
             border-radius: 14px;
-            background-color: rgba(255, 107, 107, 0.1);
+            background-color: rgba(255, 75, 75, 0.1);
             width: 85%;
             max-width: 300px;
             font-size: 16px;
@@ -965,8 +964,7 @@ def format_greeks_bn(delta, gamma, vega, theta, rho):
             color: white;
         }}
         .greeks-container span {{
-            color: #FF6B6B;
-            font-weight: bold;
+            color: #FF4B4B;
         }}
         </style>
         <div class="greeks-container">
