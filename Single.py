@@ -132,7 +132,7 @@ st.session_state.single_style = style
 
 # Spot Step Slider
 if "single_spot_step" not in st.session_state:
-    st.session_state.single_spot_step = 0.05
+    st.session_state.single_spot_step = 0.10
 spot_step_raw_value = st.sidebar.slider('Spot Step Slider:',
                              min_value=1,
                              max_value=25,
@@ -144,7 +144,7 @@ st.session_state.single_spot_step = spot_step
 
 # Implied Volatility Step Slider
 if "single_iv_step" not in st.session_state:
-    st.session_state.single_iv_step = 0.05
+    st.session_state.single_iv_step = 0.10
 iv_step_raw_value = st.sidebar.slider('IV Step Slider:',
                              min_value=1,
                              max_value=25,
@@ -183,9 +183,10 @@ if all(v is not None for v in [spot, iv, px, strike, rate, time, dividend_yield,
                 )
 
         col1, col2 = st.columns([1,4])
+        
         # Greeks Output
         with col1:
-            st.subheader("Greeks")
+            st.subheader("**Greeks**")
             st.markdown(greeks_html, unsafe_allow_html=True)
             st.caption("Greeks represent the size and direction for the initial strategy")
 
@@ -195,8 +196,11 @@ if all(v is not None for v in [spot, iv, px, strike, rate, time, dividend_yield,
                                          option_type=option_type, spot_step=spot_step, iv_step=iv_step)
                 matrix = matrix_instance.get_matrix(direction)
 
-                fig = Plotting(matrix, matrix_instance, 'Single', ticker).plot(direction, option_type)
-                st.pyplot(fig, clear_figure=True)
+                plot_instance = Plotting(matrix=matrix, instance=matrix_instance,
+                                         strategy='Single', ticker=ticker)
+                
+                fig = plot_instance.heatmap(direction=direction, option_type=option_type)
+                st.plotly_chart(fig, use_container_width=True)
     else:
         st.warning("Inputs must be greater than or equal to zero...")
 else:

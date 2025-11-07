@@ -236,7 +236,7 @@ if all(v is not None for v in [spot, call_px, put_px, call_iv, put_iv, strike, r
         col1, col2 = st.columns([1,4])
         # Greeks Output
         with col1:
-            st.subheader("Strategy Greeks")
+            st.subheader("**Greeks**")
             st.markdown(greeks_html, unsafe_allow_html=True)
             st.caption("Greeks represent the size and direction for the initial strategy")
 
@@ -253,11 +253,12 @@ if all(v is not None for v in [spot, call_px, put_px, call_iv, put_iv, strike, r
             put_matrix = put_matrix_instance.get_matrix(direction=direction) * put_quantity
 
             plot_instance = Plotting(matrix=[call_matrix, put_matrix], 
-                                    instance=[call_matrix_instance, put_matrix_instance], 
-                                    strategy='Straddle', ticker=ticker)
+                                     instance=[call_matrix_instance, put_matrix_instance], 
+                                     strategy='Straddle', 
+                                     ticker=ticker)
 
-            fig = plot_instance.plot(direction=direction)
-            st.pyplot(fig, clear_figure=True)
+            fig = plot_instance.heatmap(direction=direction)
+            st.plotly_chart(fig, use_container_width=True)
     else:
         st.warning("Inputs must be greater than or equal to zero...")
 else:

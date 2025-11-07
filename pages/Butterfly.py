@@ -70,7 +70,7 @@ if ticker:
         st.sidebar.write(f"**Spot Price:** ${spot:.2f}")
         st.session_state.spot = spot
     else:
-        st.sidebar.error(f"Failed to retrieve data for {ticker}...")
+        st.sidebar.error(f"Failed to retrieve spot price for {ticker}...")
         spot = st.session_state.spot
     
     if dividend_yield is not None:
@@ -78,12 +78,6 @@ if ticker:
     else:
         st.sidebar.error(f"Failed to retrieve dividend yield for {ticker}...")
         dividend_yield = st.session_state.dividend_yield
-
-# Spot Price
-if spot:
-    st.sidebar.write(f"**Spot Price:** ${spot:.2f}")
-else:
-    st.sidebar.warning("Spot price not available...")
 
 # Dividend Yield
 if dividend_yield is not None:
@@ -252,15 +246,27 @@ elif sub_strategy in ["Iron Butterfly", "Reverse Iron Butterfly"]:
     except ValueError: st.sidebar.error("Please enter a valid number for High Call Option IV...")
 
 # Time Input
-if "time" not in st.session_state:
-    st.session_state.time = 0.5
-default_expiration_date = (datetime.today() + timedelta(days=1)).date()
-expiration_date = st.sidebar.date_input("Expiration Date:",
-                                        min_value=datetime.today().date() + timedelta(days=1),
-                                        max_value=datetime.today().date() + timedelta(days=3650),
-                                        value=(datetime.today() + timedelta(days=int(st.session_state.time * 180))).date())
+if "butterfly_time" not in st.session_state:
+    st.session_state.butterfly_time = 0.5
+
+min_exp_date = datetime.today().date() + timedelta(days=1)
+max_exp_date = datetime.today().date() + timedelta(days=3650)
+default_exp_date = (datetime.today() + timedelta(days=int(st.session_state.butterfly_time * 365))).date()
+
+if default_exp_date < min_exp_date:
+    initial_value_for_date_input = min_exp_date
+elif default_exp_date > max_exp_date:
+    initial_value_for_date_input = max_exp_date
+else:
+    initial_value_for_date_input = default_exp_date
+
+expiration_date = st.sidebar.date_input("Expiration Date:", 
+                                        min_value=min_exp_date,
+                                        max_value=max_exp_date,
+                                        value=initial_value_for_date_input)
+
 time = (expiration_date - datetime.today().date()).days / 365
-st.session_state.time = time
+st.session_state.butterfly_time = time
 st.sidebar.write(f"**Time to Expiry:** {time:.2f} years")
 
 # Risk-Free Rate Request
@@ -271,7 +277,6 @@ except:
     rate = st.session_state.rate
 st.session_state.rate = rate
 st.sidebar.write(f"**Risk-Free Rate:** {100*rate:.2f}%")
-
 
 # Sidebar header
 st.sidebar.header('Dashboard Settings')
@@ -435,9 +440,9 @@ else:
     col1, col2 = st.columns([1,4])
     # Greeks Output
     with col1:
-        st.subheader("Strategy Greeks")
+        st.subheader("**Greeks**")
         st.markdown(greeks_html, unsafe_allow_html=True)
-        st.caption("Greeks represent the size and direction for the initial strategy.")
+        st.caption("Greeks represent the size and direction for the initial strategy")
 
     # Graph Generation
     matrix_list = None
@@ -530,6 +535,8 @@ else:
             elif instance_list is None:
                 raise ValueError("No instance list generated...")
             else:
-                plot_instance = Plotting(matrix_list, instance_list, sub_strategy, ticker)
-                fig = plot_instance.plot()
-                st.pyplot(fig, clear_figure=True)
+                plot_instance = Plotting(matrix=matrix_list, instance=instance_list, 
+                                         strategy=sub_strategy, ticker=ticker)
+                
+                fig = plot_instance.heatmap()
+                st.plotly_chart(fig, use_container_width=True)

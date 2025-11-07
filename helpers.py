@@ -1,14 +1,12 @@
 import requests
-import matplotlib
 import numpy as np
 import pandas as pd
 import yfinance as yf
 import streamlit as st
 from functools import cache
+import plotly.express as pex
 from scipy.stats import norm
 from datetime import datetime
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -421,7 +419,7 @@ class Matrix:
 
 
 # --- Heatmap Plotting Class --- 
-class Plotting(Matrix):
+class Plotting:
     def __init__(self, matrix, instance, strategy: str, ticker: str):
         
         self.matrix = matrix
@@ -429,7 +427,7 @@ class Plotting(Matrix):
         self.strategy = strategy
         self.ticker = ticker
 
-    # Internal helper method, generates the master matrix that will be plotted
+    # Internal helper method, generates the matrix that will be plotted
     def _get_matrix(self) -> np.ndarray:
         if isinstance(self.matrix, np.ndarray):
             return self.matrix
@@ -442,7 +440,7 @@ class Plotting(Matrix):
             raise ValueError("Matrix must be a numpy array or a list of numpy arrays...")
     
     # Internal helper method, generates the formatted IV list for the graph
-    def _get_iv_list(self):
+    def _get_iv_list(self) -> list:
         if isinstance(self.instance, Matrix):
             return self.instance.format_iv_list()
         
@@ -463,121 +461,99 @@ class Plotting(Matrix):
         
         raise TypeError("Invalid type, must be Matrix or list of Matrix instances...")
     
-    def heatmap(self, ax=None, cbar_kw=None, cbarlabel="", **kwargs):
-        if ax is None:
-            ax = plt.gca()
+    def heatmap(self, direction='Long', option_type='Call'):
+            if self.strategy == 'Straddle':
+                title = f"PnL of {direction} Straddle for {self.ticker}"
+                ylabel = "Implied Volatility (call / put)"
+            elif self.strategy == 'Long Call Butterfly':
+                title = f"PnL of {self.strategy} for {self.ticker}"
+                ylabel = "Implied Volatility (low / atm / high)"
+            elif self.strategy == 'Short Call Butterfly':
+                title = f"PnL of {self.strategy} for {self.ticker}"
+                ylabel = "Implied Volatility (low / atm / high)"
+            elif self.strategy == 'Long Put Butterfly':
+                title = f"PnL of {self.strategy} for {self.ticker}"
+                ylabel = "Implied Volatility (low / atm / high)"
+            elif self.strategy == 'Short Put Butterfly':
+                title = f"PnL of {self.strategy} for {self.ticker}"
+                ylabel = "Implied Volatility (low / atm / high)"
+            elif self.strategy == "Iron Butterfly":
+                title = f"PnL of {self.strategy} for {self.ticker}"
+                ylabel = "Implied Volatility (low / atm (p) / atm (c) / high)"
+            elif self.strategy == "Reverse Iron Butterfly":
+                title = f"PnL of {self.strategy} for {self.ticker}"
+                ylabel = "Implied Volatility (low / atm (p) / atm (c) / high)"
+            else:
+                title = f"PnL for {direction} {self.ticker} {option_type} Option"
+                ylabel = "Implied Volatility"
 
-        if cbar_kw is None:
-            cbar_kw = {}
+            iv_list_format = self._get_iv_list()
+            if isinstance(self.instance, list):
+                spot_list_format = [round(x, 2) for x in self.instance[0].offset_spot_arr()]
+            else:
+                spot_list_format = [round(x, 2) for x in self.instance.offset_spot_arr()]
 
-        cbar_kw.setdefault("shrink", 0.7)
+            matrix = self._get_matrix()
 
-        matrix = self._get_matrix()
+            vmin, vmax = np.min(matrix), np.max(matrix)
+            if vmin < 0 and vmax > 0:
+                midpoint = 0
+            elif vmin >= 0:
+                midpoint = vmin
+            else:
+                midpoint = vmax
 
-        im = ax.imshow(matrix, **kwargs)
+            fig = pex.imshow(
+                matrix, 
+                labels=dict(x="Spot Price", y=ylabel, color="PnL"),
+                color_continuous_scale="RdYlGn",
+                color_continuous_midpoint=midpoint,
+                text_auto='.1f',
+                aspect='equal'
+            )
+            
+            fig.update_layout(
+                title=dict(
+                    text=f"<b>{title}</b>",
+                    font=dict(size=30, color='white'),
+                    x=0.5,
+                    xanchor='center'
+                ),
+                xaxis=dict(
+                    title=dict(text="Spot Price", font=dict(size=18, color='white')),
+                    tickmode='array',
+                    tickvals=list(range(len(spot_list_format))),
+                    ticktext=[f"${round(x, 1)}" for x in spot_list_format],
+                    tickfont=dict(size=14, color='white'),
+                ),
+                yaxis=dict(
+                    title=dict(text=ylabel, font=dict(size=18, color='white')),
+                    tickmode='array',
+                    tickvals=list(range(len(iv_list_format))),
+                    ticktext=iv_list_format,
+                    tickfont=dict(size=14, color='white'),
+                ),
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='white'),
+                coloraxis_colorbar=dict(
+                    title="PnL",
+                    title_font=dict(size=14, color='white'),
+                    tickfont=dict(size=14, color='white'),
+                    len=0.75,
+                    thickness=20
+                ),
+                margin=dict(l=80, r=120, t=80, b=80),
+                width=800,
+                height=800,
+            )
 
-        cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw)
-        cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom", color='white')
-        cbar.ax.yaxis.set_tick_params(color='white')  
-        for label in cbar.ax.get_yticklabels():
-            label.set_color('white')
+            fig.update_traces(
+                textfont=dict(size=12, color='black'),
+                hovertemplate='Spot Price: %{x}<br>' + ylabel + ': %{y}<br>PnL: %{z:.2f}<extra></extra>'
+            )
 
-        iv_list_format = self._get_iv_list()
-        if isinstance(self.instance, list):
-            spot_list_format = [round(x, 2) for x in self.instance[0].offset_spot_arr()]
-        else:
-            spot_list_format = [round(x, 2) for x in self.instance.offset_spot_arr()]
-
-        ax.set_xticks(range(matrix.shape[1]), labels=spot_list_format)
-        ax.set_yticks(range(matrix.shape[0]), labels=iv_list_format)
-        ax.tick_params(axis='x', colors='white')
-        ax.tick_params(axis='y', colors='white')
-
-        ax.spines[:].set_visible(False)
-        ax.grid(which="minor", color="w", linestyle='-', linewidth=3)
-        ax.tick_params(which="minor", bottom=False, left=False)
-
-        return im, cbar
-
-    def annotate_heatmap(self, im, valfmt="{x:.2f}",
-                        textcolors=("black", "black"),
-                        threshold=None, **textkw):
-        
-        matrix = self._get_matrix()
-
-        if threshold is not None:
-            threshold = im.norm(threshold)
-        else:
-            threshold = im.norm(matrix.max())/2.
-
-        kw = dict(horizontalalignment="center",
-                verticalalignment="center")
-        kw.update(textkw)
-
-        if isinstance(valfmt, str):
-            valfmt = matplotlib.ticker.StrMethodFormatter(valfmt)
-
-        texts = []
-        for i in range(matrix.shape[0]):
-            for j in range(matrix.shape[1]):
-                kw.update(color=textcolors[int(im.norm(matrix[i, j]) > threshold)])
-                text = im.axes.text(j, i, valfmt(matrix[i, j], None), **kw)
-                texts.append(text)
-
-        return texts
-    
-    def plot(self, direction='Long', option_type='Call'):
-        fig, ax = plt.subplots(figsize=(10,10), facecolor='none')
-
-        color_map = mcolors.LinearSegmentedColormap.from_list("Default RedGreen", ["red","white","green"])
-        strategy_values = np.array(self._get_matrix())
-        vmin, vmax = np.min(strategy_values), np.max(strategy_values)
-        if vmin < 0 and vmax < 0:  
-            vcenter = np.mean(strategy_values)
-            color_map = mcolors.LinearSegmentedColormap.from_list("RedYellow", ["red", "orange", "yellow", "white"])
-        elif vmin < 0 and vmax > 0:  
-            vcenter = 0
-            color_map = mcolors.LinearSegmentedColormap.from_list("RedGreen", ["red", "white", "green"])
-        elif vmin > 0:  
-            vcenter = np.mean(strategy_values)
-            color_map = mcolors.LinearSegmentedColormap.from_list("BlueGreen", ["white", "lightblue", "green"])
-        norm = mcolors.TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
-
-        im, cbar = self.heatmap(ax=ax, cmap=color_map, norm=norm, cbarlabel="PnL", cbar_kw={'shrink': 0.7})
-        texts = self.annotate_heatmap(im, valfmt="{x:.2f}", textcolors=("black", "black"))
-
-        if self.strategy == 'Straddle':
-            title = f"PnL of {direction} Straddle for {self.ticker}"
-            ylabel = "Implied Volatility (call / put)"
-        elif self.strategy == 'Long Call Butterfly':
-            title = f"PnL of {self.strategy} for {self.ticker}"
-            ylabel = "Implied Volatility (low / atm / high)"
-        elif self.strategy == 'Short Call Butterfly':
-            title = f"PnL of {self.strategy} for {self.ticker}"
-            ylabel = "Implied Volatility (low / atm / high)"
-        elif self.strategy == 'Long Put Butterfly':
-            title = f"PnL of {self.strategy} for {self.ticker}"
-            ylabel = "Implied Volatility (low / atm / high)"
-        elif self.strategy == 'Short Put Butterfly':
-            title = f"PnL of {self.strategy} for {self.ticker}"
-            ylabel = "Implied Volatility (low / atm / high)"
-        elif self.strategy == "Iron Butterfly":
-            title = f"PnL of {self.strategy} for {self.ticker}"
-            ylabel = "Implied Volatility (low / atm (p) / atm (c) / high)"
-        elif self.strategy == "Reverse Iron Butterfly":
-            title = f"PnL of {self.strategy} for {self.ticker}"
-            ylabel = "Implied Volatility (low / atm (p) / atm (c) / high)"
-        else:
-            title = f"PnL for {direction} {self.ticker} {option_type} Option"
-            ylabel = "Implied Volatility"
-        
-        plt.title(title, fontsize=20, fontweight='bold', color='white')
-        plt.xlabel("Spot Price", fontsize=14, color='white')
-        plt.ylabel(ylabel, fontsize=14, color='white')
-
-        fig.tight_layout()
-        
-        return fig
+            return fig
 
 
 # --- Volatility Analysis Classes --- 
