@@ -10,13 +10,35 @@ st.title("Single Option Strategy")
 st.markdown("<hr style='border: 1px solid white;'>", unsafe_allow_html=True)
 
 # Sidebar 
-st.sidebar.header("Option Inputs")
+st.sidebar.header("Strategy Inputs")
 
 # Ticker
 if "single_ticker" not in st.session_state:
     st.session_state.single_ticker = "SPY"
 ticker = st.sidebar.text_input("Ticker:", value=st.session_state.single_ticker).upper()
 st.session_state.single_ticker = ticker
+
+# yfinance Stock Request for Spot & Diviend Yield
+spot = None
+dividend_yield = None
+if "single_spot" not in st.session_state: st.session_state.single_spot = 600.0
+if "single_dividend_yield" not in st.session_state: st.session_state.single_dividend_yield = 0.017
+if ticker:
+    spot, dividend_yield = get_yfinance(ticker)
+
+    if spot is not None:
+        st.sidebar.write(f"**Spot Price:** ${spot:.2f}")
+        st.session_state.single_spot = spot
+    else:
+        st.sidebar.error(f"Failed to retrieve data for {ticker}...")
+        spot = st.session_state.single_spot
+        
+    if dividend_yield is not None:
+        st.sidebar.write(f"**Dividend Yield:** {dividend_yield:.2f}%")
+        st.session_state.single_dividend_yield = dividend_yield / 100
+    else:
+        st.sidebar.error(f"Failed to retrieve dividend yield for {ticker}...")
+        dividend_yield = st.session_state.single_dividend_yield
 
 # Option Type Selection
 if "single_option_type" not in st.session_state:
@@ -87,28 +109,6 @@ time = (expiration_date - datetime.today().date()).days / 365
 st.session_state.single_time = time
 st.sidebar.write(f"**Time to Expiry:** {time:.2f} years")
 
-# yfinance Stock Request for Spot & Diviend Yield
-spot = None
-dividend_yield = None
-if "single_spot" not in st.session_state: st.session_state.single_spot = 600.0
-if "single_dividend_yield" not in st.session_state: st.session_state.single_dividend_yield = 0.017
-if ticker:
-    spot, dividend_yield = get_yfinance(ticker)
-
-    if spot is not None:
-        st.sidebar.write(f"**Spot Price:** ${spot:.2f}")
-        st.session_state.single_spot = spot
-    else:
-        st.sidebar.error(f"Failed to retrieve data for {ticker}...")
-        spot = st.session_state.single_spot
-        
-    if dividend_yield is not None:
-        st.sidebar.write(f"**Dividend Yield:** {dividend_yield:.2f}%")
-        st.session_state.single_dividend_yield = dividend_yield / 100
-    else:
-        st.sidebar.error(f"Failed to retrieve dividend yield for {ticker}...")
-        dividend_yield = st.session_state.single_dividend_yield
-
 # Risk-Free Rate Request
 if 'single_rate' not in st.session_state:
     st.session_state.single_rate = 0.04
@@ -132,7 +132,7 @@ st.session_state.single_style = style
 
 # Spot Step Slider
 if "single_spot_step" not in st.session_state:
-    st.session_state.single_spot_step = 0.10
+    st.session_state.single_spot_step = 0.05
 spot_step_raw_value = st.sidebar.slider('Spot Step Slider:',
                              min_value=1,
                              max_value=25,
@@ -144,7 +144,7 @@ st.session_state.single_spot_step = spot_step
 
 # Implied Volatility Step Slider
 if "single_iv_step" not in st.session_state:
-    st.session_state.single_iv_step = 0.10
+    st.session_state.single_iv_step = 0.05
 iv_step_raw_value = st.sidebar.slider('IV Step Slider:',
                              min_value=1,
                              max_value=25,

@@ -9,7 +9,7 @@ st.title("Straddle Option Strategy")
 st.markdown("<hr style='border: 1px solid white;'>", unsafe_allow_html=True)
 
 # Sidebar 
-st.sidebar.header("Option Inputs")
+st.sidebar.header("Strategy Inputs")
 
 # Ticker Input
 if "straddle_ticker" not in st.session_state:
@@ -17,6 +17,28 @@ if "straddle_ticker" not in st.session_state:
 ticker = st.sidebar.text_input("Ticker:", value=st.session_state.straddle_ticker).upper()
 if ticker:
     st.session_state.straddle_ticker = ticker
+
+# yfinance Stock Request for Spot & Dividend Yield
+spot = None
+dividend_yield = None
+if "straddle_spot" not in st.session_state: st.session_state.straddle_spot = 600.0
+if "straddle_dividend_yield" not in st.session_state: st.session_state.straddle_dividend_yield = 0.017
+if ticker:
+    spot, dividend_yield = get_yfinance(ticker)
+    
+    if spot is not None:
+        st.sidebar.write(f"**Spot Price:** ${spot:.2f}")
+        st.session_state.straddle_spot = spot
+    else:
+        st.sidebar.error(f"Failed to retrieve data for {ticker}...")
+        spot = st.session_state.straddle_spot
+
+    if dividend_yield is not None:
+        st.sidebar.write(f"**Dividend Yield:** {dividend_yield:.2f}%")
+        st.session_state.straddle_dividend_yield = dividend_yield / 100
+    else:
+        st.sidebar.error(f"Failed to retrieve dividend yield for {ticker}...")
+        dividend_yield = st.session_state.straddle_dividend_yield
 
 # Direction Selection
 if "straddle_direction" not in st.session_state:
@@ -133,28 +155,6 @@ time = (expiration_date - datetime.today().date()).days / 365
 st.session_state.straddle_time = time
 st.sidebar.write(f"**Time to Expiry:** {time:.2f} years")
 
-# yfinance Stock Request for Spot & Dividend Yield
-spot = None
-dividend_yield = None
-if "straddle_spot" not in st.session_state: st.session_state.straddle_spot = 600.0
-if "straddle_dividend_yield" not in st.session_state: st.session_state.straddle_dividend_yield = 0.017
-if ticker:
-    spot, dividend_yield = get_yfinance(ticker)
-    
-    if spot is not None:
-        st.sidebar.write(f"**Spot Price:** ${spot:.2f}")
-        st.session_state.straddle_spot = spot
-    else:
-        st.sidebar.error(f"Failed to retrieve data for {ticker}...")
-        spot = st.session_state.straddle_spot
-
-    if dividend_yield is not None:
-        st.sidebar.write(f"**Dividend Yield:** {dividend_yield:.2f}%")
-        st.session_state.straddle_dividend_yield = dividend_yield / 100
-    else:
-        st.sidebar.error(f"Failed to retrieve dividend yield for {ticker}...")
-        dividend_yield = st.session_state.straddle_dividend_yield
-
 # Risk-Free Rate Request
 if 'straddle_rate' not in st.session_state:
     st.session_state.straddle_rate = 0.04
@@ -178,7 +178,7 @@ st.session_state.straddle_style = style
 
 # Spot Step Slider
 if "spot_step" not in st.session_state:
-    st.session_state.spot_step = 0.10
+    st.session_state.spot_step = 0.05
 spot_step_raw_value = st.sidebar.slider('Spot Step Slider:',
                              min_value=1,
                              max_value=25,
@@ -190,7 +190,7 @@ st.session_state.spot_step = spot_step
 
 # Implied Volatility Step Slider
 if "iv_step" not in st.session_state:
-    st.session_state.iv_step = 0.10
+    st.session_state.iv_step = 0.05
 iv_step_raw_value = st.sidebar.slider('IV Step Slider:',
                              min_value=1,
                              max_value=25,

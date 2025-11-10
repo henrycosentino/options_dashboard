@@ -6,7 +6,7 @@ from datetime import timedelta
 if "ticker" not in st.session_state: st.session_state.ticker = "SPY"
 if "expiration_date" not in st.session_state: st.session_state.expiration_date = (datetime.today() + timedelta(days=90)).date()
 if "spot_step" not in st.session_state: st.session_state.spot_step = 0.05
-if "iv_step" not in st.session_state: st.session_state.iv_step = 0.10
+if "iv_step" not in st.session_state: st.session_state.iv_step = 0.05
 if "dividend_yield" not in st.session_state: st.session_state.dividend_yield = 0.017
 if "rate" not in st.session_state: st.session_state.rate = 0.04
 
@@ -52,7 +52,7 @@ st.title("Butterfly Option Strategy")
 st.markdown("<hr style='border: 1px solid white;'>", unsafe_allow_html=True)
 
 # Sidebar
-st.sidebar.header("Option Inputs")
+st.sidebar.header("Strategy Inputs")
 
 # Ticker Input
 ticker = st.sidebar.text_input("Ticker:", value=st.session_state.ticker).upper()
