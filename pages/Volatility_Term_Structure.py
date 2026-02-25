@@ -13,7 +13,7 @@ st.sidebar.header("Option Inputs")
 
 # Ticker
 if "term_ticker" not in st.session_state:
-    st.session_state.term_ticker = "SPY"
+    st.session_state.term_ticker = "VOO"
 ticker = st.sidebar.text_input("Ticker:", value=st.session_state.term_ticker).upper()
 if ticker:
     st.session_state.term_ticker = ticker

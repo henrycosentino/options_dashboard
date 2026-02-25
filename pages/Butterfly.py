@@ -3,7 +3,7 @@ import streamlit as st
 from datetime import datetime
 from datetime import timedelta
 
-if "ticker" not in st.session_state: st.session_state.ticker = "SPY"
+if "ticker" not in st.session_state: st.session_state.ticker = "VOO"
 if "expiration_date" not in st.session_state: st.session_state.expiration_date = (datetime.today() + timedelta(days=90)).date()
 if "spot_step" not in st.session_state: st.session_state.spot_step = 0.05
 if "iv_step" not in st.session_state: st.session_state.iv_step = 0.05

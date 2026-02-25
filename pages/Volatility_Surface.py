@@ -16,8 +16,8 @@ st.sidebar.header("Option Inputs")
 
 # Ticker Input
 if "surface_ticker" not in st.session_state:
-    st.session_state.surface_ticker= "SPY"
-ticker = st.sidebar.text_input("Ticker:", value=st.session_state.get("surface_ticker", "SPY")).upper()
+    st.session_state.surface_ticker= "VOO"
+ticker = st.sidebar.text_input("Ticker:", value=st.session_state.get("surface_ticker", "VOO")).upper()
 st.session_state.surface_ticker = ticker
 
 # Option Type Selection

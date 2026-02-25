@@ -14,7 +14,7 @@ st.sidebar.header("Strategy Inputs")
 
 # Ticker
 if "single_ticker" not in st.session_state:
-    st.session_state.single_ticker = "SPY"
+    st.session_state.single_ticker = "VOO"
 ticker = st.sidebar.text_input("Ticker:", value=st.session_state.single_ticker).upper()
 st.session_state.single_ticker = ticker
 

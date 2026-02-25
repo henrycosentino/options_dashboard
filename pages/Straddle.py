@@ -13,7 +13,7 @@ st.sidebar.header("Strategy Inputs")
 
 # Ticker Input
 if "straddle_ticker" not in st.session_state:
-    st.session_state.straddle_ticker = "SPY"
+    st.session_state.straddle_ticker = "VOO"
 ticker = st.sidebar.text_input("Ticker:", value=st.session_state.straddle_ticker).upper()
 if ticker:
     st.session_state.straddle_ticker = ticker
